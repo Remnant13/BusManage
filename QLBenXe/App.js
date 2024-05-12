@@ -1,37 +1,36 @@
 import React from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from './components/login_signin/Login';
-import Login from './components/login_signin/login1';
-import LoadingScreen from './components/loading/Loadingscreen'
-import SignupScreen from './components/login_signin/Signup';
+import LoginScreen from './components/User/LogIn';
+import LoadingScreen from './components/loading/LoadingScreen'
+import SignupScreen from './components/User/SignUp';
+import HomeScreen from './components/NhaXe/HomeScreen';
+import Logout from './components/User/LogOut';
+import UserInfo from './components/User/UserInfo';
+import SearchTrip from './components/Bus/SearchTrip';
+import SearchCompany from './components/Bus/SeacrhCompany';
+import TripDetail from './components/Bus/TripDetail';
+import CompanyDetail from './components/Bus/CompanyDetail';
 
 const Stack = createStackNavigator();
-
-export default function App() {
+const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="LoadingHome" component={LoadingScreen} />
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="SignUp" component={SignupScreen}/>
+      <Stack.Screen name='TripDetail' component={TripDetail} options={{headerShown: false }}/>
+      <Stack.Screen name='CompanyDetail' component={CompanyDetail} options={{headerShown: false }}/>
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerLeft: null }}/>
+      <Stack.Screen name= "SearchCompany" component={SearchCompany}options={{ headerLeft: null, headerShown: false }} />
+      <Stack.Screen name="SearchTrip" component={SearchTrip} options={{ headerLeft: null, headerShown: false }} />
+      <Stack.Screen name="Loading" component={LoadingScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerLeft: null }}/>
+      <Stack.Screen name="SignUp" component={SignupScreen} />
+      <Stack.Screen name='UserInfo' component={UserInfo}/>
+      <Stack.Screen name="Logout" component={Logout} />      
+      
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#666869',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activityIndicator: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -25 }, { translateY: -25 }],
-  },
-});
+export default App;

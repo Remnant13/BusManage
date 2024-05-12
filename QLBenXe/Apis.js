@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const URL = "http://127.0.0.1:8000"; 
+//nhớ sửa nha, IPv4 nghen
+const HOST = "http://192.168.1.66:8000"; 
 
 export const endpoints = {
     'busCompanies': "/buscompanies/",
@@ -16,13 +17,12 @@ export const endpoints = {
 };
 
 export const authApi = (accessToken) => axios.create({
-    baseURL: URL,
+    baseURL: HOST,
     headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json" 
+        "Authorization": `Bearer ${accessToken}`
     }
-});
+})
 
 export default axios.create({
-    baseURL: URL
-});
+    baseURL: HOST
+})
