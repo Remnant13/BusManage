@@ -1,47 +1,68 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
+import { endpoints, urlBaseImg } from "../../Apis";
 
-// Này là tìm hãng xe
 const SearchCompany = () => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Fetch data when component mounts
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get("https://linhhv.pythonanywhere.com/bus-company/");
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearText = () => {
     setSearchText('');
+    setData([]);
   };
 
-  const handleSearch = () => {
-    //xử lý data nghen
+  const handleSearch = async () => {
+    if (!searchText.trim()) {
+      setError('Please enter a search term.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get(`https://linhhv.pythonanywhere.com/bus-company/search?keyword=${searchText}`);
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  
-  const fetchMoreData = () => {
-    // Fetch dữ liệu và cập nhật state
+  const fetchMoreData = async () => {
+    // Nếu cần hỗ trợ paginating, bạn có thể thêm logic tại đây
   };
 
-  // thử thôi
-  const suggestedBuses = [
-    { id: 1, name: 'Bus A', description: 'This is bus A description', price: '$20' },
-    { id: 2, name: 'Bus B', description: 'This is bus B description', price: '$25' },
-    { id: 3, name: 'Bus C', description: 'This is bus C description', price: '$30' },
-    { id: 4, name: 'Bus D', description: 'This is bus D description', price: '$22' },
-    { id: 5, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 6, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 7, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 8, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 9, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 10, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 11, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-  ];
-
-  //decript là thông tin hãng xe, 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
-    <Image source={require('../../components/loading/logo.png')} style={styles.itemImage} />
+      <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.avatar}` }} style={styles.itemImage} />
       <View style={styles.nameDecript}>
-      <Text style={styles.itemName}>{item.name}</Text>
-      
-      <Text style={styles.itemDescription}>{item.description}</Text>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemDescription}>{item.description}</Text>
       </View>
     </View>
   );
@@ -67,10 +88,14 @@ const SearchCompany = () => {
           )}
         </View>
       </View>
+      {loading && <ActivityIndicator size="large" color="#8d21bf" />}
+      {error && <Text style={styles.errorText}>{error}</Text>}
       <FlatList
-        data={suggestedBuses}
+        data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
+        onEndReached={fetchMoreData}
+        onEndReachedThreshold={0.5}
       />
     </View>
   );
@@ -85,19 +110,20 @@ const styles = StyleSheet.create({
   containerHeader: {
     width: '100%',
     height: '16%',
-    marginBottom: 40,
+    marginBottom: 20,
     backgroundColor: '#916aa3',
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20, 
+    justifyContent: 'center', // Aligns the content in the center
   },
   containerBar: {
-    marginTop: 40,
     flexDirection: 'row',
     borderColor: '#c852f7',
     borderRadius: 30,
     borderWidth: 2,
-    marginHorizontal: 10,
+    marginHorizontal: 20,
     backgroundColor: 'white',
+    alignItems: 'center', // Aligns the content vertically in the center
   },
   searchBar: {
     flex: 1,
@@ -105,43 +131,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   searchIconContainer: {
-    padding: 13,
+    padding: 10,
   },
   clearIconContainer: {
     padding: 10,
   },
   itemContainer: {
     flexDirection: 'row',
-    padding: 20,
+    padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 10,
   },
   itemImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: 10,
-    marginRight: 20,
+    marginRight: 10,
   },
-  itemInfo: {
-    flex: 1, // Đảm bảo các thông tin nằm cạnh hình ảnh theo hàng dọc
-  },
-  nameDecript:{
+  nameDecript: {
     flexDirection: 'column',
+    justifyContent: 'center', // Centers the text vertically
+    flexShrink: 1, // Allows the text to wrap if it's too long
   },
   itemName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   itemDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#555',
     marginTop: 5,
   },
-  itemPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8d21bf',
-    alignSelf: 'flex-end', // Căn phần giá về phía dưới cùng
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
