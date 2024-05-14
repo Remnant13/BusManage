@@ -1,51 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
+import { ActivityIndicator } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+
 
 // Này là tìm hãng xe
-const SearchCompany = () => {
+const SearchCompany = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    // Fetch data when component mounts
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get("https://linhhv.pythonanywhere.com/bus-company/");
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearText = () => {
     setSearchText('');
+    setData([]);
   };
 
-  const handleSearch = () => {
-    //xử lý data nghen
+  const handleSearch = async () => {
+    if (!searchText.trim()) {
+      setError('Please enter a search term.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get(`https://linhhv.pythonanywhere.com/bus-company/search?keyword=${searchText}`);
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  
-  const fetchMoreData = () => {
-    // Fetch dữ liệu và cập nhật state
+  const fetchMoreData = async () => {
+    // Nếu cần hỗ trợ paginating, bạn có thể thêm logic tại đây
   };
 
-  // thử thôi
-  const suggestedBuses = [
-    { id: 1, name: 'Bus A', description: 'This is bus A description', price: '$20' },
-    { id: 2, name: 'Bus B', description: 'This is bus B description', price: '$25' },
-    { id: 3, name: 'Bus C', description: 'This is bus C description', price: '$30' },
-    { id: 4, name: 'Bus D', description: 'This is bus D description', price: '$22' },
-    { id: 5, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 6, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 7, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 8, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 9, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 10, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-    { id: 11, name: 'Bus E', description: 'This is bus E description', price: '$28' },
-  ];
-
-  //decript là thông tin hãng xe, 
   const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
-    <Image source={require('../../components/loading/logo.png')} style={styles.itemImage} />
+    <TouchableOpacity style={styles.itemContainer} onPress={() => handleItemPress(item)}>
+      <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.avatar}` }} style={styles.itemImage} />
       <View style={styles.nameDecript}>
-      <Text style={styles.itemName}>{item.name}</Text>
-      
-      <Text style={styles.itemDescription}>{item.description}</Text>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">{item.description}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
-
+    const handleItemPress = (item) => {
+      navigation.navigate('CompanyDetail', { item });
+    };
   return (
     <View style={styles.container}>
       <View style={styles.containerHeader}>
@@ -67,10 +93,14 @@ const SearchCompany = () => {
           )}
         </View>
       </View>
+      {loading && <ActivityIndicator size="large" color="#8d21bf" />}
+      {error && <Text style={styles.errorText}>{error}</Text>}
       <FlatList
-        data={suggestedBuses}
+        data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
+        onEndReached={fetchMoreData}
+        onEndReachedThreshold={0.5}
       />
     </View>
   );
@@ -121,12 +151,14 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
     marginRight: 20,
+    resizeMode: 'cover'
   },
   itemInfo: {
     flex: 1, // Đảm bảo các thông tin nằm cạnh hình ảnh theo hàng dọc
   },
   nameDecript:{
     flexDirection: 'column',
+    maxWidth: 300,
   },
   itemName: {
     fontSize: 18,

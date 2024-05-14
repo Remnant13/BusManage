@@ -5,11 +5,10 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Apis, { authApi, endpoints } from "../../Apis";
 
 const LoginScreen = ({navigation}) => {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
+
     const [loading, setLoading] = useState();
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSignUpPress = () => {
       navigation.navigate('SignUp');
@@ -19,59 +18,96 @@ const LoginScreen = ({navigation}) => {
       setShowPassword(!showPassword);
     };
 
-    const handleLoginPress = async () => {
-      if (!username.trim() || !password.trim()) {
-        setError('Vui lòng nhập tên đăng nhập và mật khẩu.');
-        return;
-      }
-    
+    const [textInputValues, setTextInputValues] = useState({
+      client_id: "vqyiw8bH0m7GNMEU4LmPCdfW9GNPxvGOhBBcM3Io",
+      client_secret:
+        "VP3kvy8VXwZcUmakkFbzj3ohWfGT3KHVVbmi9jHD81gaLvwDFDsXcE73rnMlNrkhBVxcfGetfdfRarN4XYjPg7BDUuw2Pyq7JjuqV4awa8CjAOjsl7rq3VPdfqsTyisB",
+      grant_type: "password",
+      username: "",
+      password: "",
+    });
+  
+    const handleInputChange = (inputName, text) => {
+      setTextInputValues({
+        ...textInputValues,
+        [inputName]: text,
+      });
+    };
+  
+    const saveToken = async (token) => {
       try {
-        setLoading(true);
-    
-        const formData = new FormData();
-        formData.append('client_id', 'peaYJQgyopNTPyOLH7Sd9tuvXEsxxiEyACpQAisM'); 
-        formData.append('client_secret', '1x8mZhdvNWYvH4LEFxwHmkXK7maKmFeiBX7gtbsuFQFxuW78kwbkttXYt4dhZ9JGC3dGCFliQrTcTB0BpkJJoy8gwcerBVfDsUQcvaeqCNeRCbdGLyastU2pDTfo0b7j'); 
-        formData.append('username', username);
-        formData.append('password', password);
-        formData.append('grant_type', 'password');
-    
-        const response = await fetch(endpoints['login'], {
-          method: "POST",
-          body: formData
-        });
-    
-        if (!response.ok) {
-          throw new Error('Kết nối đến máy chủ không thành công.');
-        }
-    
-        const data = await response.json();
-    
-        await AsyncStorage.setItem('token-access', data.access_token);
-        const userResponse = await authApi(data.access_token).get(endpoints['current_user']);
-        const userData = await userResponse.json();
-    
-        dispatch({
-          type: 'login',
-          payload: {
-            username: userData.username
-          }
-        });
-    
-        navigation.navigate('Home');
+        await AsyncStorage.setItem('@token', token);
+        console.log('Token đã được lưu trữ');
       } catch (error) {
-        console.error('Lỗi khi kết nối đến cơ sở dữ liệu:', error);
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          setError("Có lỗi xảy ra khi xử lý dữ liệu.");
-        } else if (error.response && error.response.status === 401) {
-          setError("Tên đăng nhập hoặc mật khẩu không đúng.");
-        } else {
-          setError("Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.");
-        }
-      } finally {
-        setLoading(false);
+        console.log('Lỗi khi lưu trữ token:', error);
       }
     };
   
+    const getToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('@token');
+        if (token !== null) {
+          console.log('Token đã được lấy:', token);
+          return token;
+        } else {
+          console.log('Không tìm thấy token');
+          return null;
+        }
+      } catch (error) {
+        console.log('Lỗi khi lấy token:', error);
+        return null;
+      }
+    };
+    const handleLoginPress = async () => {
+      if (!textInputValues.username || !textInputValues.password) {
+        Alert.alert(
+          'Vui lòng điền đầy đủ thông tin tài khoản!',
+          '',
+          [{ text: 'OK' }],
+          { cancelable: false }
+        );
+        return; // Dừng hàm nếu không điền đầy đủ thông tin
+      }
+  
+      try {
+        setLoading(true);
+        const formData = new FormData();
+        formData.append("client_id", textInputValues.client_id);
+        formData.append("client_secret", textInputValues.client_secret);
+        formData.append("username", textInputValues.username);
+        formData.append("password", textInputValues.password);
+        formData.append("grant_type", textInputValues.grant_type);
+  
+  
+        const response = await fetch(
+          "https://linhhv.pythonanywhere.com/o/token/",
+          {// co headers la bi loi network request failed
+            method: "POST",
+            body: formData,
+          }
+        );
+  
+        const data = await response.json();
+        console.log(data);
+        if (data.access_token) {
+          saveToken(data.access_token);
+          navigation.replace("Home");
+          
+        } else {
+  
+          setLoading(false);
+          throw new Error("Đăng nhập thất bại!");
+        }
+      } catch (error) {
+        setLoading(false);
+        Alert.alert(
+          "Đăng nhập tài khoản thất bại!",
+          "Mời bạn đăng nhập lại",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+      }
+    };
     
   return (
     <ImageBackground source={require('./loginBg.png')} style={Mystyles.container}>
@@ -83,8 +119,8 @@ const LoginScreen = ({navigation}) => {
           <Image source={require('./icUser.png')} style={Mystyles.icon} />
           <TextInput 
             placeholder="Username" 
-            value={username} 
-            onChangeText={t=>setUsername(t)}
+            value={textInputValues.username} 
+            onChangeText={(text) => handleInputChange("username", text)}
           />
         </View>
 
@@ -93,8 +129,8 @@ const LoginScreen = ({navigation}) => {
           <TextInput 
             placeholder="Password" 
             secureTextEntry={!showPassword} 
-            value={password} 
-            onChangeText={t=>setPassword(t)}
+            value={textInputValues.password} 
+            onChangeText={(text) => handleInputChange("password", text)}
             style={{ flex: 1 }} 
           />
           <TouchableOpacity onPress={togglePasswordVisibility} style={{ padding: 22 }}>

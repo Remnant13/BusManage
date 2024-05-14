@@ -1,40 +1,72 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
 
 // Này là tìm chuyến xe
 const SearchTrip = () => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
   //const sortedBuses = suggestedBuses.sort((a, b) => parseFloat(a.price.slice(1)) - parseFloat(b.price.slice(1)));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Fetch data when component mounts
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get("https://linhhv.pythonanywhere.com/bus-company/");
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearText = () => {
     setSearchText('');
+    setData([]);
   };
 
-  const handleSearch = () => {
-    //xử lý data nghen
+  const handleSearch = async () => {
+    if (!searchText.trim()) {
+      setError('Please enter a search term.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get(`https://linhhv.pythonanywhere.com/bus-company/search?keyword=${searchText}`);
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  
-  const fetchMoreData = () => {
-    // Fetch dữ liệu và cập nhật state
+  const fetchMoreData = async () => {
+    // Nếu cần hỗ trợ paginating, bạn có thể thêm logic tại đây
   };
-
-  //tương tự như đoạn này //lỗi đoạn này do k biết lấy data
-  const handleDetail = (busId) => {
-    const navigation = useNavigation();
-    // Assume busData is an object containing all necessary information of the bus
-    navigation.navigate('TripDetail', { busData: yourBusDataObject });
-  };
-  
-
-  // thử thôi
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleDetail(item.id)}>
-      {/* Render mỗi item tại đây */}
-    </TouchableOpacity>
-  );  
+    <View style={styles.itemContainer}>
+      <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.avatar}` }} style={styles.itemImage} />
+      <View style={styles.nameDecript}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">{item.description}</Text>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -99,7 +131,41 @@ const styles = StyleSheet.create({
   clearIconContainer: {
     padding: 10,
   },
-
+  itemContainer: {
+    flexDirection: 'row',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  itemImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+    marginRight: 20,
+    resizeMode: 'cover'
+  },
+  itemInfo: {
+    flex: 1, // Đảm bảo các thông tin nằm cạnh hình ảnh theo hàng dọc
+  },
+  nameDecript:{
+    flexDirection: 'column',
+    maxWidth: 300,
+  },
+  itemName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  itemDescription: {
+    fontSize: 16,
+    color: '#555',
+    marginTop: 5,
+  },
+  itemPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#8d21bf',
+    alignSelf: 'flex-end', // Căn phần giá về phía dưới cùng
+  },
 });
 
 export default SearchTrip;

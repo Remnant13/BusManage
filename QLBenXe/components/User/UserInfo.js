@@ -1,16 +1,54 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { View, Image, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Image, Text, StyleSheet, TouchableOpacity, Alert, ImageBackground } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
-import { Modal } from 'react-native-paper';
+import { ActivityIndicator, Modal } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 
 const UserInfo = () => {
 
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const navigation = useNavigation();
+
+    useEffect(() => {
+        // Hàm để lấy thông tin người dùng từ API
+        const fetchUserData = async () => {
+            try {
+                // Lấy token từ AsyncStorage
+                const token = await AsyncStorage.getItem('@token');
+                // Kiểm tra xem token có tồn tại không
+                if (token) {
+                    // Gọi API để lấy thông tin người dùng
+                    const response = await fetch('https://linhhv.pythonanywhere.com/user/current-user/', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const userData = await response.json();
+                    // Cập nhật state với thông tin người dùng
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy thông tin người dùng:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Gọi hàm fetchUserData để lấy thông tin người dùng
+        fetchUserData();
+    }, []);
+
+    if (loading) {
+        return <ActivityIndicator size="large" color="#0000ff" />;
+    }
+
     const picker = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "Thành công") {
@@ -23,148 +61,175 @@ const UserInfo = () => {
             }
         }
     };
-
+    
+    
     const handleChange =() => {
         setIsModalVisible(true);
     }
 
-    const handleSave = () => {
+    //k chạy đc nha
+    const handleSave = async () => {
         // Kiểm tra xem mật khẩu mới và nhập lại mật khẩu mới có khớp nhau không
         if (newPassword === confirmPassword) {
-            // Thực hiện lưu thông tin người dùng, ví dụ:
-            const updatedUser = { ...user, password: newPassword };
-            // Gọi hàm hoặc API để cập nhật thông tin người dùng
-            saveUserData(updatedUser);
-            // Đóng modal sau khi lưu thành công
-            setIsModalVisible(false);
+            try {
+                // Lấy token từ AsyncStorage
+                const token = await AsyncStorage.getItem('@token');
+                // Gửi yêu cầu thay đổi mật khẩu lên server
+                const response = await fetch('https://linhhv.pythonanywhere.com/user/change-password/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ password: newPassword })
+                });
+                // Kiểm tra xem yêu cầu có thành công hay không
+                if (response.ok) {
+                    // Hiển thị thông báo cho người dùng
+                    Alert.alert('Thông báo', 'Mật khẩu đã được thay đổi thành công!');
+                } else {
+                    // Hiển thị thông báo lỗi cho người dùng
+                    Alert.alert('Lỗi', 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật mật khẩu:', error);
+                Alert.alert('Lỗi', 'Đã có lỗi xảy ra. Vui lòng thử lại sau.');
+            } finally {
+                // Đóng modal sau khi xử lý hoàn tất
+                setIsModalVisible(false);
+            }
         } else {
-            // Hiển thị thông báo hoặc thực hiện hành động phù hợp nếu mật khẩu không khớp nhau
-            alert("Mật khẩu mới không khớp. Vui lòng thử lại.");
+            // Hiển thị thông báo nếu mật khẩu mới không khớp
+            Alert.alert('Thông báo', 'Mật khẩu mới không khớp. Vui lòng thử lại.');
         }
-    };    
-    const handleScreen = (screen) => {
-        navigation.navigate(screen);
     };
-  return (
-    //sửa chỗ ... thành user.<tên của API>
-    <View style={styles.container}>
-        <View style={styles.in4Container}>
-            <View style={styles.avatarContainer}>
-                <Image style={styles.avatar} 
-                //source={{ uri: user.avatar }} 
-                />
-            </View>
+    const handleLogout = async () => {
+        try {
+            // Xóa token hoặc bất kỳ dữ liệu đăng nhập nào khác từ AsyncStorage
+            await AsyncStorage.removeItem('@token');
+            // Sau đó điều hướng người dùng đến màn hình đăng nhập
+            navigation.replace('Login');
+        } catch (error) {
+            console.log('Lỗi khi đăng xuất:', error);
+        }
+    };
+    return (
+        <ImageBackground source={require('./user.png')} style={styles.backgroundImage}>
+        <View style={styles.container}>
+            {user ? (  
+            <View style={styles.in4Container}>
+                  
+                    <View style={styles.avatarContainer}>
+                        <Image style={styles.avatar} source={{ uri: user.avatar }} />
+                    </View>
 
-        <View style={styles.row}>
-          <Text style={styles.text}>Gmail:</Text>
-          <Text style={styles.value}>....</Text>
-        </View>
+                    <View style={styles.row}>
+                        <Text style={styles.text}>Gmail:</Text>
+                        <Text style={styles.value}>{user.email}</Text>
+                    </View>
 
-        <View style={styles.row}>
-          <Text style={styles.text} >Họ và tên:</Text>
-          <Text style={styles.value}>....</Text>
-        </View>
-        
-        <View style={styles.row}>
-          <Text style={styles.text}>Username:</Text>
-          <Text style={styles.value}>....</Text>
-        </View>
+                    <View style={styles.row}>
+                        <Text style={styles.text}>Họ và tên:</Text>
+                        <Text style={styles.value}>{user.first_name} {user.last_name}</Text>
+                    </View>
 
-        <View style={styles.row}>
-          <Text style={styles.text}>Password:</Text>
-          <Text style={styles.value} onPress={() => setShowPassword(!showPassword)}>
-        {showPassword ? 'RealPass' : '....'}
-            </Text>
-        </View>
-        
+                    <View style={styles.row}>
+                        <Text style={styles.text}>Username:</Text>
+                        <Text style={styles.value}>{user.username}</Text>
+                    </View>
 
-        <View style={styles.btContainer}>
-            <TouchableOpacity 
-            style={[{marginRight: 50}]} onPress={() => handleChange('ChangePass')}>
-                <Text 
-                style={[{color: 'blue', 
-                fontStyle: 'italic', 
-                fontSize: 17,
-                fontWeight: 'bold',
-                paddingTop: 10}]}>
-                    Đổi mật khẩu?
-                </Text>
-            </TouchableOpacity>
+                    {/* <View style={styles.row}>
+                        <Text style={styles.text}>Password:</Text>
+                        <Text style={styles.value} onPress={() => setShowPassword(!showPassword)}>
+                            {showPassword ? 'RealPass' : '....'}
+                        </Text>
+                    </View> */}
 
-            <TouchableOpacity style={styles.button} onPress={() => handleScreen('Logout')}>
-                <Text style={[{
-                    fontSize: 15, 
-                    fontWeight: 'bold'}]}>LOG OUT</Text>
-            </TouchableOpacity>
-        </View>
-      </View>
-      <Modal
-            visible={isModalVisible}
-            animationType="slide"
-            transparent={true}
-        >
-            <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
-                    
-                    {/* Ô nhập mật khẩu cũ */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nhập mật khẩu cũ"
-                        secureTextEntry={true}
-                    />
-
-                    {/* Ô nhập mật khẩu mới */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nhập mật khẩu mới"
-                        secureTextEntry={true}
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                    />
-
-                    {/* Ô nhập lại mật khẩu mới */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nhập lại mật khẩu mới"
-                        secureTextEntry={true}
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                    />
-
-                    <View style={styles.modalButtonContainer}>
-                        <TouchableOpacity 
-                            style={[styles.modalButton, { marginRight: 10 }]}
-                            onPress={() => setIsModalVisible(false)}
-                        >
-                            <Text style={styles.modalButtonText}>Đóng</Text>
+                    <View style={styles.btContainer}>
+                        <TouchableOpacity style={[{ marginRight: 50 }]} onPress={() => handleChange('ChangePass')}>
+                            <Text style={[{ color: 'blue', fontStyle: 'italic', fontSize: 17, fontWeight: 'bold', paddingTop: 10 }]}>
+                                Đổi mật khẩu?
+                            </Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            style={styles.modalButton }
-                            onPress={handleSave}
-                        >
-                            <Text style={styles.modalButtonText}>Lưu</Text>
+                        <TouchableOpacity style={styles.button} onPress={handleLogout}>
+                            <Text style={[styles.buttonText, { fontWeight: 'bold' }]}>LOG OUT</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
+            ) : (
+                <Text>Không có thông tin người dùng</Text>
+            )}   
+              <Modal
+                    visible={isModalVisible}
+                    animationType="slide"
+                    transparent={true}
+                >
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalContent}>
+                            <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
+                            
+                            {/* Ô nhập mật khẩu cũ */}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nhập mật khẩu cũ"
+                                secureTextEntry={true}
+                            />
+        
+                            {/* Ô nhập mật khẩu mới */}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nhập mật khẩu mới"
+                                secureTextEntry={true}
+                                value={newPassword}
+                                onChangeText={setNewPassword}
+                            />
+        
+                            {/* Ô nhập lại mật khẩu mới */}
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nhập lại mật khẩu mới"
+                                secureTextEntry={true}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                            />
+        
+                            <View style={styles.modalButtonContainer}>
+                                <TouchableOpacity 
+                                    style={[styles.modalButton, { marginRight: 10 }]}
+                                    onPress={() => setIsModalVisible(false)}
+                                >
+                                    <Text style={styles.modalButtonText}>Đóng</Text>
+                                </TouchableOpacity>
+        
+                                <TouchableOpacity 
+                                    style={styles.modalButton }
+                                    onPress={handleSave}
+                                >
+                                    <Text style={styles.modalButtonText}>Lưu</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
             </View>
-        </Modal>
-    </View>
-  );
-};
+            </ImageBackground>
+          );
+        };
 
 const styles = StyleSheet.create({
+    backgroundImage: {
+        flex: 1,
+        resizeMode: 'cover',
+    },
     container: {
       flex: 1,
-      backgroundColor: '#c7d9d3',
       flexDirection: 'row',
-      //justifyContent: 'center',
     },
     avatarContainer: {
       width: 170,
       height: 170,
-      marginLeft: 60,
+      marginLeft: 80,
       borderRadius: 30,
       borderColor: 'gray',
       borderWidth: 1,
@@ -179,13 +244,11 @@ const styles = StyleSheet.create({
     },
     in4Container:{
         marginTop: 90,
-        marginLeft: 50,
+        marginLeft: 30,
+        
     },
-
     row: {
       flexDirection: 'row',
-      //alignItems: 'center',
-      //marginLeft: 50,
       marginBottom: 30,
     },
     text: {
@@ -201,10 +264,9 @@ const styles = StyleSheet.create({
       borderRadius: 3,
     },
     value: {
-      //fontFamily: 'Arial',
-      fontSize: 16,
-      marginLeft: 10,
-      width: 200,
+      fontSize: 20,
+      marginLeft: 20,
+      width: 230,
       height: 40,
       paddingTop: 10,
       paddingLeft: 10,
@@ -214,7 +276,6 @@ const styles = StyleSheet.create({
     },
     btContainer:{
         flexDirection: 'row',
-        //marginTop: 20,
     },
     button:{
         alignItems: 'center',
