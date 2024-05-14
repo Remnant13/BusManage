@@ -1,7 +1,7 @@
 import axios from "axios";
 
 //nhớ sửa nha, IPv4 nghen
-const HOST = "http://192.168.1.66:8000"; 
+const HOST = "http://linhhv.pythonanywhere.com"; 
 
 export const endpoints = {
     'busCompanies': "/buscompanies/",
