@@ -1,40 +1,77 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
+import { useNavigation } from '@react-navigation/native';
+import { format } from 'date-fns';
 
-// Này là tìm chuyến xe
 const SearchTrip = () => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
-  //const sortedBuses = suggestedBuses.sort((a, b) => parseFloat(a.price.slice(1)) - parseFloat(b.price.slice(1)));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get("https://linhhv.pythonanywhere.com/trip/");
+      setData(response.data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearText = () => {
     setSearchText('');
+    fetchData();
   };
 
-  const handleSearch = () => {
-    //xử lý data nghen
+  const handleSearch = async () => {
+    if (!searchText.trim()) {
+      setError('Please enter a search term.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.get(`https://linhhv.pythonanywhere.com/trip/?search=${searchText}`);
+      setData(response.data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  
-  const fetchMoreData = () => {
-    // Fetch dữ liệu và cập nhật state
+  const handleDetail = (busData) => {
+    navigation.navigate('TripDetail', { busData });
   };
 
-  //tương tự như đoạn này //lỗi đoạn này do k biết lấy data
-  const handleDetail = (busId) => {
-    const navigation = useNavigation();
-    // Assume busData is an object containing all necessary information of the bus
-    navigation.navigate('TripDetail', { busData: yourBusDataObject });
-  };
-  
-
-  // thử thôi
   const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleDetail(item.id)}>
-      {/* Render mỗi item tại đây */}
+    <TouchableOpacity onPress={() => handleDetail(item)}>
+      <View style={styles.itemContainer}>
+        <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.bus_company.avatar}` }} style={styles.itemImage} />
+        <View style={styles.nameDecript}>
+          <Text style={styles.itemName}>{item.bus_company.name}</Text>
+          <Text style={styles.itemDescription}>{item.bus_route.route_name}</Text>
+          <Text style={styles.itemPrice}>Price: {item.ticket_price}</Text>
+          <Text style={styles.itemDeparture}>Departure: { format(new Date(item.departure_time), 'HH:mm dd/MM/yyyy') }</Text>
+          <Text style={styles.itemArrival}>Arrival: { format(new Date(item.arrival_time), 'HH:mm dd/MM/yyyy') }</Text>
+        </View>
+      </View>
     </TouchableOpacity>
-  );  
+  );
 
   return (
     <View style={styles.container}>
@@ -45,7 +82,7 @@ const SearchTrip = () => {
           </TouchableOpacity>
           <TextInput
             style={styles.searchBar}
-            placeholder="Search for buses"
+            placeholder="Search for trips"
             placeholderTextColor="#888"
             value={searchText}
             onChangeText={setSearchText}
@@ -57,10 +94,13 @@ const SearchTrip = () => {
           )}
         </View>
       </View>
+      {loading && <ActivityIndicator size="large" color="#8d21bf" />}
+      {error && <Text style={styles.errorText}>{error}</Text>}
       <FlatList
-        //data={suggestedBuses}
+        data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
+        onEndReachedThreshold={0.5}
       />
     </View>
   );
@@ -78,15 +118,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#916aa3',
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20, 
+    justifyContent: 'center',
   },
   containerBar: {
-    marginTop: 40,
     flexDirection: 'row',
     borderColor: '#c852f7',
     borderRadius: 30,
     borderWidth: 2,
-    marginHorizontal: 10,
+    marginHorizontal: 20,
     backgroundColor: 'white',
+    alignItems: 'center',
   },
   searchBar: {
     flex: 1,
@@ -94,12 +135,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   searchIconContainer: {
-    padding: 13,
+    padding: 10,
   },
   clearIconContainer: {
     padding: 10,
   },
-
+  itemContainer: {
+    flexDirection: 'row',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    marginHorizontal: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  nameDecript: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    flexShrink: 1,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
+  },
+  itemPrice: {
+    fontSize: 16,
+    color: '#8d21bf',
+    marginTop: 5,
+  },
+  itemDeparture: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 5,
+  },
+  itemArrival: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 5,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 });
 
 export default SearchTrip;
