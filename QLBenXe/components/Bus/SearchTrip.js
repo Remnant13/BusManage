@@ -58,7 +58,7 @@ const SearchTrip = () => {
         </View>
       </View>
       <FlatList
-        data={suggestedBuses}
+        //data={suggestedBuses}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
       />
