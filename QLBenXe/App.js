@@ -11,14 +11,13 @@ import SearchTrip from './components/Bus/SearchTrip';
 import SearchCompany from './components/Bus/SeacrhCompany';
 import TripDetail from './components/Bus/TripDetail';
 import CompanyDetail from './components/Bus/CompanyDetail';
+import ShipForm from './components/Bus/ShipForm';
 
 const Stack = createStackNavigator();
 const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-      <Stack.Screen name='TripDetail' component={TripDetail} options={{headerShown: false }}/>
-      <Stack.Screen name='CompanyDetail' component={CompanyDetail} options={{headerShown: false }}/>
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerLeft: null }}/>
       <Stack.Screen name= "SearchCompany" component={SearchCompany}options={{ headerLeft: null, headerShown: false }} />
       <Stack.Screen name="SearchTrip" component={SearchTrip} options={{ headerLeft: null, headerShown: false }} />
@@ -27,7 +26,9 @@ const App = () => {
       <Stack.Screen name="SignUp" component={SignupScreen} />
       <Stack.Screen name='UserInfo' component={UserInfo}/>
       <Stack.Screen name="Logout" component={Logout} />      
-      
+      <Stack.Screen name='TripDetail' component={TripDetail} options={{headerShown: false }}/>
+      <Stack.Screen name='CompanyDetail' component={CompanyDetail} options={{headerShown: false }}/>
+      <Stack.Screen name='ShipForm' component={ShipForm} options={{headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

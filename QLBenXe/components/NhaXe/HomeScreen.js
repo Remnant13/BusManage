@@ -31,8 +31,8 @@ const HomeScreen = () => {
             <Text style={styles.buttonText}>Tìm hãng xe</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity  style={styles.button} onPress={() => handleScreen('Screen4')}>
-            <Text style={styles.buttonText}>BUTTON 4</Text>
+          <TouchableOpacity  style={styles.button} onPress={() => handleScreen('ShipForm')}>
+            <Text style={styles.buttonText}>Giao Hàng</Text>
           </TouchableOpacity>
         </View>
 
