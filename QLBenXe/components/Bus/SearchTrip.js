@@ -66,8 +66,8 @@ const SearchTrip = () => {
           <Text style={styles.itemName}>{item.bus_company.name}</Text>
           <Text style={styles.itemDescription}>{item.bus_route.route_name}</Text>
           <Text style={styles.itemPrice}>Price: {item.ticket_price}</Text>
-          <Text style={styles.itemDeparture}>Departure: { format(new Date(item.departure_time), 'HH:mm dd/MM/yyyy') }</Text>
-          <Text style={styles.itemArrival}>Arrival: { format(new Date(item.arrival_time), 'HH:mm dd/MM/yyyy') }</Text>
+          <Text style={styles.itemDeparture}>Khởi hành: { format(new Date(item.departure_time), 'HH:mm dd/MM/yyyy') }</Text>
+          <Text style={styles.itemArrival}>Cập bến: { format(new Date(item.arrival_time), 'HH:mm dd/MM/yyyy') }</Text>
         </View>
       </View>
     </TouchableOpacity>
