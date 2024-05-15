@@ -8,11 +8,12 @@ import { format } from 'date-fns';
 const SearchTrip = () => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
+  //const sortedBuses = suggestedBuses.sort((a, b) => parseFloat(a.price.slice(1)) - parseFloat(b.price.slice(1)));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigation = useNavigation();
 
   useEffect(() => {
+    // Fetch data when component mounts
     fetchData();
   }, []);
 
@@ -32,7 +33,7 @@ const SearchTrip = () => {
 
   const handleClearText = () => {
     setSearchText('');
-    fetchData();
+    setData([]);
   };
 
   const handleSearch = async () => {
@@ -142,53 +143,38 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     flexDirection: 'row',
-    padding: 15,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
-    marginHorizontal: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
   },
   itemImage: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 10,
-    marginRight: 10,
+    marginRight: 20,
+    resizeMode: 'cover'
   },
-  nameDecript: {
+  itemInfo: {
+    flex: 1, // Đảm bảo các thông tin nằm cạnh hình ảnh theo hàng dọc
+  },
+  nameDecript:{
     flexDirection: 'column',
-    justifyContent: 'center',
-    flexShrink: 1,
+    maxWidth: 300,
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   itemDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#555',
     marginTop: 5,
   },
   itemPrice: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#8d21bf',
-    marginTop: 5,
-  },
-  itemDeparture: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 5,
-  },
-  itemArrival: {
-    fontSize: 14,
-    color: '#333',
-    marginTop: 5,
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
+    alignSelf: 'flex-end', // Căn phần giá về phía dưới cùng
   },
 });
 

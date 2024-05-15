@@ -11,7 +11,7 @@ import SearchCompany from './components/Bus/SeacrhCompany';
 import TripDetail from './components/Bus/TripDetail';
 import CompanyDetail from './components/Bus/CompanyDetail';
 import ShipForm from './components/Bus/ShipForm';
-import LoadingScreen from './components/loading/LoadingScreen';
+import LoadingScreen from './components/loading/LoadingScreen'
 
 const Stack = createStackNavigator();
 const App = () => {

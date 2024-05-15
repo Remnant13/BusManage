@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import axios from 'axios';
 import { endpoints, urlBaseImg } from "../../Apis";
+import axios from 'axios';
+import { ActivityIndicator } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 
-const SearchCompany = () => {
+const SearchCompany = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,13 @@ const SearchCompany = () => {
 
     try {
       const response = await axios.get("https://linhhv.pythonanywhere.com/bus-company/");
-      setData(response.data.results);
+      let firstPageData = response.data.results;
+      if (response.data.next) {
+        const nextPageResponse = await axios.get(response.data.next);
+        const nextPageData = nextPageResponse.data.results;
+        firstPageData = [...firstPageData, ...nextPageData];
+      }
+      setData(firstPageData);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -53,19 +61,19 @@ const SearchCompany = () => {
     }
   };
 
-  const fetchMoreData = async () => {
-    // Nếu cần hỗ trợ paginating, bạn có thể thêm logic tại đây
-  };
-
   const renderItem = ({ item }) => (
-    <View style={styles.itemContainer}>
+    <TouchableOpacity style={styles.itemContainer} onPress={() => handleItemPress(item)}>
       <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.avatar}` }} style={styles.itemImage} />
-      <View style={styles.nameDecript}>
+      <View style={styles.nameDescription}>
         <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemDescription}>{item.description}</Text>
+        <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">{item.description}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
+
+  const handleItemPress = (item) => {
+    navigation.navigate('CompanyDetail', { item });
+  };
 
   return (
     <View style={styles.container}>
@@ -94,7 +102,6 @@ const SearchCompany = () => {
         data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        onEndReached={fetchMoreData}
         onEndReachedThreshold={0.5}
       />
     </View>
@@ -104,19 +111,19 @@ const SearchCompany = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    borderBottomLeftRadius: 20, 
-    borderBottomRightRadius: 20, 
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   containerHeader: {
     width: '100%',
     height: '16%',
     marginBottom: 20,
     backgroundColor: '#916aa3',
-    borderTopLeftRadius: 20, 
-    borderTopRightRadius: 20, 
-    justifyContent: 'center', // Aligns the content in the center
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   containerBar: {
+    marginTop: 20,
     flexDirection: 'row',
     borderColor: '#c852f7',
     borderRadius: 30,
@@ -150,12 +157,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 10,
-    marginRight: 10,
+    marginRight: 20,
+    resizeMode: 'cover'
   },
-  nameDecript: {
+  nameDescription: {
+    flex: 1,
     flexDirection: 'column',
-    justifyContent: 'center', // Centers the text vertically
-    flexShrink: 1, // Allows the text to wrap if it's too long
+    maxWidth: 300,
   },
   itemName: {
     fontSize: 16,
@@ -168,7 +176,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
-    textAlign: 'center',
+    alignSelf: 'center',
     marginTop: 10,
   },
 });

@@ -188,9 +188,9 @@ const SignupScreen = ({ navigation }) => {
           )}
         </View>
       </View>
-      <TouchableOpacity style={styles.button} onPress={Main}>
+      {/* <TouchableOpacity style={styles.button} onPress={Main}>
         <Text style={styles.buttonText}>Main</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };

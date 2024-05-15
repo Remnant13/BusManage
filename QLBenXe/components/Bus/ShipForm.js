@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { ScrollView } from 'react-native-gesture-handler';
-//import DateTimePickerModal from '@react-native-modal/datetime-picker'; 
-
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import DateTimePicker from '@react-native-community/datetimepicker'; // Uncomment if DateTimePicker is fixed
 
 const ShipForm = () => {
   const [tenNguoiGui, setTenNguoiGui] = useState('');
@@ -15,16 +16,64 @@ const ShipForm = () => {
   const [thoiGianGui, setThoiGianGui] = useState('');
   const [thoiGianNhan, setThoiGianNhan] = useState('');
   const [tinhTrangHang, setTinhTrangHang] = useState('');
-  const [showSendDatePicker, setShowSendDatePicker] = useState(false);
-  const [sendSelectedDate, setSendSelectedDate] = useState(new Date());
-  const [showReceiveDatePicker, setShowReceiveDatePicker] = useState(false);
-  const [receiveSelectedDate, setReceiveSelectedDate] = useState(new Date());
+  // const [showSendDatePicker, setShowSendDatePicker] = useState(false);
+  // const [sendSelectedDate, setSendSelectedDate] = useState(new Date());
+  // const [showReceiveDatePicker, setShowReceiveDatePicker] = useState(false);
+  // const [receiveSelectedDate, setReceiveSelectedDate] = useState(new Date());
 
-  const handleSend = () => {
-    // Gửi email hoặc SMS cho người nhận khi hàng đến
-    console.log('Gửi email hoặc SMS cho người nhận');
+// Sau khi nhận được token từ API sau khi đăng nhập
+  const saveTokenToStorage = async (token) => {
+    try {
+      await AsyncStorage.setItem('@token', token);
+      console.log('Token saved successfully.');
+    } catch (error) {
+      console.log('Error saving token:', error);
+    }
   };
 
+  const handleSend = async () => {
+    try {
+      const token = await AsyncStorage.getItem('@token');
+      if (token) {
+        // Gửi yêu cầu API với token đã lấy được
+        const data = {
+          sender_name: tenNguoiGui,
+          sender_phone: soDienThoaiNguoiGui,
+          sender_email: emailNguoiGui,
+          receiver_name: tenNguoiNhan,
+          receiver_phone: soDienThoaiNguoiNhan,
+          receiver_email: emailNguoiNhan,
+          delivery_time: thoiGianGui,
+          pickup_time: thoiGianNhan,
+          delivery_status: tinhTrangHang,
+          bus_company: 2, // Change this value if necessary
+        };
+    
+        const token = await AsyncStorage.getItem('@token');
+        axios.post('https://linhhv.pythonanywhere.com/delivery/', data, {
+          
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Add authentication token if required
+          }
+        })
+        .then(response => {
+          Alert.alert('Thành công', 'Đơn hàng đã được tạo thành công');
+          console.log(response.data);
+        })
+        .catch(error => {
+          console.info(data);
+          Alert.alert('Lỗi', 'Đã xảy ra lỗi khi tạo đơn hàng');
+          console.log(error);
+        });
+      } else {
+        console.log('Authentication credentials were not provided.', error);
+      }
+    } catch (error) {
+      console.log('Error getting token:', error);
+    }
+  };
+  
   // const showDatepicker = (type) => {
   //   if (type === 'send') {
   //     setShowSendDatePicker(true);
@@ -34,24 +83,19 @@ const ShipForm = () => {
   //     setShowSendDatePicker(false); 
   //   }
   // };
-  
-  //Cái datetimepicker này lỗi rồi có vẻ nó k còn hỗ trợ hoặc cách xử ý DTP lỗi 
 
   // const handleDateChange = (selectedDate, type) => {
-  // const currentDate = selectedDate || new Date();
+  //   const currentDate = selectedDate || new Date();
   //   if (type === 'send') {
-  //     const currentDate = selectedDate || sendSelectedDate;
   //     setShowSendDatePicker(false);
   //     setSendSelectedDate(currentDate);
-  //     setThoiGianGui(currentDate); // Cập nhật giá trị của TextInput thời gian gửi hàng
+  //     setThoiGianGui(currentDate.toISOString());
   //   } else if (type === 'receive') {
-  //     const currentDate = selectedDate || receiveSelectedDate;
   //     setShowReceiveDatePicker(false);
   //     setReceiveSelectedDate(currentDate);
-  //     setThoiGianNhan(currentDate); // Cập nhật giá trị của TextInput thời gian nhận hàng
+  //     setThoiGianNhan(currentDate.toISOString());
   //   }
   // };
-  
 
   return (
     <View style={styles.container}>
@@ -97,33 +141,35 @@ const ShipForm = () => {
             onChangeText={(text) => setEmailNguoiNhan(text)}
           />
 
-<Text style={styles.label}>Thời gian gửi hàng</Text>
-<TouchableOpacity onPress={() => showDatepicker('send')}>
-  <Text style={[styles.input, { height: 35 }]}>Chọn ngày</Text>
-</TouchableOpacity>
-{showSendDatePicker && (
-  <DateTimePicker
-    testID="sendDateTimePicker"
-    value={sendSelectedDate}
-    mode="datetime"
-    display="default"
-    onChange={(event, selectedDate) => handleDateChange(selectedDate, 'send')}
-  />
-)}
+          {/* Uncomment if DateTimePicker is fixed
+          <Text style={styles.label}>Thời gian gửi hàng</Text>
+          <TouchableOpacity onPress={() => showDatepicker('send')}>
+            <Text style={[styles.input, { height: 35 }]}>Chọn ngày</Text>
+          </TouchableOpacity>
+          {showSendDatePicker && (
+            <DateTimePicker
+              testID="sendDateTimePicker"
+              value={sendSelectedDate}
+              mode="datetime"
+              display="default"
+              onChange={(event, selectedDate) => handleDateChange(selectedDate, 'send')}
+            />
+          )}
 
-<Text style={styles.label}>Thời gian nhận hàng</Text>
-<TouchableOpacity onPress={() => showDatepicker('receive')}>
-  <Text style={[styles.input, { height: 35 }]}>Chọn ngày</Text>
-</TouchableOpacity>
-{showReceiveDatePicker && (
-  <DateTimePicker
-    testID="receiveDateTimePicker"
-    value={receiveSelectedDate}
-    mode="datetime"
-    display="default"
-    onChange={(event, selectedDate) => handleDateChange(selectedDate, 'receive')}
-  />
-)}
+          <Text style={styles.label}>Thời gian nhận hàng</Text>
+          <TouchableOpacity onPress={() => showDatepicker('receive')}>
+            <Text style={[styles.input, { height: 35 }]}>Chọn ngày</Text>
+          </TouchableOpacity>
+          {showReceiveDatePicker && (
+            <DateTimePicker
+              testID="receiveDateTimePicker"
+              value={receiveSelectedDate}
+              mode="datetime"
+              display="default"
+              onChange={(event, selectedDate) => handleDateChange(selectedDate, 'receive')}
+            />
+          )}
+          */}
 
           <Picker
             selectedValue={tinhTrangHang}
@@ -133,10 +179,10 @@ const ShipForm = () => {
             <Picker.Item label="Đang gửi" value="Đang gửi" />
             <Picker.Item label="Đã nhận" value="Đã nhận" />
           </Picker>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText} onPress={handleSend}>Đăng ký</Text>
+          <TouchableOpacity style={styles.button} onPress={handleSend}>
+            <Text style={styles.buttonText}>Đăng ký</Text>
           </TouchableOpacity>
-          </View>
+        </View>
       </ScrollView>
     </View>
   );

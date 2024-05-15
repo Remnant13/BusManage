@@ -1,7 +1,7 @@
 import axios from "axios";
 
 //nhớ sửa nha, IPv4 nghen
-const HOST = "http://linhhv.pythonanywhere.com"; 
+const HOST = "https://linhhv.pythonanywhere.com"; 
 const urlBaseImg = "https://res.cloudinary.com/dx9aknvnz/";
 
 export const endpoints = {

@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { StyleSheet, View, TouchableOpacity, Text, ImageBackground } from 'react-native';
-//import Icon from 'react-native-vector-icons/FontAwesome';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import MyContext from '../../MyContext';
 
@@ -11,6 +11,17 @@ const HomeScreen = () => {
   const handleScreen = (screen) => {
     navigation.navigate(screen);
   };
+
+  const handleLogout = async () => {
+    try {
+        // Xóa token hoặc bất kỳ dữ liệu đăng nhập nào khác từ AsyncStorage
+        await AsyncStorage.removeItem('@token');
+        // Sau đó điều hướng người dùng đến màn hình đăng nhập
+        navigation.replace('Login');
+    } catch (error) {
+        console.log('Lỗi khi đăng xuất:', error);
+    }
+};
 
   return (
     <ImageBackground source={require('./busBG1.png')} style={styles.backgroundImage}>
@@ -39,10 +50,10 @@ const HomeScreen = () => {
 
         <View style={styles.buttonRow}>
           <TouchableOpacity  style={styles.button} onPress={() => handleScreen('Screen5')}>
-            <Text style={styles.buttonText}>BUTTON 5</Text>
+            <Text style={styles.buttonText}>Thống Kê</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity  style={styles.button} onPress={() => handleScreen('Logout')}>
+          <TouchableOpacity  style={styles.button} onPress={handleLogout}>
             <Text style={[styles.buttonText, {color:'#d8ede6'}]}>Log Out</Text>
           </TouchableOpacity>
         </View>
@@ -54,10 +65,11 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    backgroundImage: {
-        flex: 1,
-        resizeMode: 'cover',
-    },
+  backgroundImage: {
+      flex: 1,
+      resizeMode: 'cover',
+      
+  },
   container: {
     flex: 1,
     marginTop: 75,
@@ -71,7 +83,7 @@ const styles = StyleSheet.create({
   },
   button: {
     borderRadius: 20,
-    marginBottom: 70,
+    marginBottom: 80,
     alignItems: 'center',
     width: '45%',
     height: '80%',
@@ -82,7 +94,7 @@ const styles = StyleSheet.create({
     color: '#144031',
     fontWeight: '900',
     paddingTop: 50,
-    fontSize: 20,
+    fontSize: 22,
     opacity: 1,
   },
 });
