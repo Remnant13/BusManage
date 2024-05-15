@@ -1,20 +1,17 @@
-import React, { useState, useEffect} from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text, FlatList, Image } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { ActivityIndicator } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 
-
-// Này là tìm hãng xe
 const SearchCompany = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
-    // Fetch data when component mounts
     fetchData();
   }, []);
 
@@ -24,7 +21,13 @@ const SearchCompany = ({ navigation }) => {
 
     try {
       const response = await axios.get("https://linhhv.pythonanywhere.com/bus-company/");
-      setData(response.data.results);
+      let firstPageData = response.data.results;
+      if (response.data.next) {
+        const nextPageResponse = await axios.get(response.data.next);
+        const nextPageData = nextPageResponse.data.results;
+        firstPageData = [...firstPageData, ...nextPageData];
+      }
+      setData(firstPageData);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -56,22 +59,20 @@ const SearchCompany = ({ navigation }) => {
     }
   };
 
-  const fetchMoreData = async () => {
-    // Nếu cần hỗ trợ paginating, bạn có thể thêm logic tại đây
-  };
-
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.itemContainer} onPress={() => handleItemPress(item)}>
       <Image source={{ uri: `https://res.cloudinary.com/dx9aknvnz/${item.avatar}` }} style={styles.itemImage} />
-      <View style={styles.nameDecript}>
+      <View style={styles.nameDescription}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemDescription} numberOfLines={2} ellipsizeMode="tail">{item.description}</Text>
       </View>
     </TouchableOpacity>
   );
-    const handleItemPress = (item) => {
-      navigation.navigate('CompanyDetail', { item });
-    };
+
+  const handleItemPress = (item) => {
+    navigation.navigate('CompanyDetail', { item });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.containerHeader}>
@@ -99,8 +100,6 @@ const SearchCompany = ({ navigation }) => {
         data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        onEndReached={fetchMoreData}
-        onEndReachedThreshold={0.5}
       />
     </View>
   );
@@ -109,19 +108,19 @@ const SearchCompany = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    borderBottomLeftRadius: 20, 
-    borderBottomRightRadius: 20, 
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   containerHeader: {
     width: '100%',
     height: '16%',
-    marginBottom: 40,
+    marginBottom: 20,
     backgroundColor: '#916aa3',
-    borderTopLeftRadius: 20, 
-    borderTopRightRadius: 20, 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   containerBar: {
-    marginTop: 40,
+    marginTop: 20,
     flexDirection: 'row',
     borderColor: '#c852f7',
     borderRadius: 30,
@@ -153,10 +152,8 @@ const styles = StyleSheet.create({
     marginRight: 20,
     resizeMode: 'cover'
   },
-  itemInfo: {
-    flex: 1, // Đảm bảo các thông tin nằm cạnh hình ảnh theo hàng dọc
-  },
-  nameDecript:{
+  nameDescription: {
+    flex: 1,
     flexDirection: 'column',
     maxWidth: 300,
   },
@@ -169,11 +166,10 @@ const styles = StyleSheet.create({
     color: '#555',
     marginTop: 5,
   },
-  itemPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#8d21bf',
-    alignSelf: 'flex-end', // Căn phần giá về phía dưới cùng
+  errorText: {
+    color: 'red',
+    alignSelf: 'center',
+    marginTop: 10,
   },
 });
 
